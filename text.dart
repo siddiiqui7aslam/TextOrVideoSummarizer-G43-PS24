@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class TextSummarizerPage extends StatefulWidget {
   const TextSummarizerPage({super.key});
 
   @override
+  // ignore: library_private_types_in_public_api
   _TextSummarizerPageState createState() => _TextSummarizerPageState();
 }
 
@@ -27,15 +29,15 @@ class _TextSummarizerPageState extends State<TextSummarizerPage> {
   }
 
   Future<String> query(String userInput) async {
-    const apiUrl =
-        "https://api-inference.huggingface.co/models/manohar02/new-created-llama2-model";
+    final apiUrl = dotenv.env['API_URL'];
+    final apiKey = dotenv.env['API_KEY'];
     final headers = {
-      "Authorization": "Bearer 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",
+      "Authorization": "Bearer $apiKey",
       "Content-Type": "application/json",
     };
 
     try {
-      final response = await http.post(Uri.parse(apiUrl),
+      final response = await http.post(Uri.parse(apiUrl!),
           headers: headers, body: json.encode({"inputs": userInput}));
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
@@ -87,7 +89,7 @@ class _TextSummarizerPageState extends State<TextSummarizerPage> {
     return Scaffold(
       body: Stack(
         children: [
-          // Background Design
+          
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'firebase_options.dart'; 
-import 'start.dart'; // ignore: unused_import
+import 'start.dart';     
 import 'settings.dart';
 import 'text.dart';
 import 'video.dart';
@@ -10,11 +11,16 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: "assets/.env");
+  await initializeFirebase();
+  runApp(const MyApp());
+}
+
+Future<void> initializeFirebase() async {
   await Firebase.initializeApp(
-    options: firebaseOptions, 
+    options: firebaseOptions,
   );
 
-  // Request notification permissions
   FirebaseMessaging messaging = FirebaseMessaging.instance;
   NotificationSettings settings = await messaging.requestPermission(
     alert: true,
@@ -22,18 +28,15 @@ void main() async {
     sound: true,
   );
 
-  print('User granted permission: ${settings.authorizationStatus}');
+  debugPrint('User granted permission: ${settings.authorizationStatus}');
 
-  // Subscribe to a topic if the platform is not web
   if (!kIsWeb) {
     await messaging.subscribeToTopic('new_videos').then((_) {
-      print('Subscribed to topic');
+      debugPrint('Subscribed to topic');
     }).catchError((error) {
-      print('Error subscribing to topic: $error');
+      debugPrint('Error subscribing to topic: $error');
     });
   }
-
-  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -57,8 +60,10 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
+    setupFirebaseMessaging();
+  }
 
-    // Handle foreground messages
+  void setupFirebaseMessaging() {
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       RemoteNotification? notification = message.notification;
       if (notification != null) {
@@ -78,7 +83,6 @@ class _MyHomePageState extends State<MyHomePage> {
       }
     });
 
-    // Handle messages opened from terminated state or background
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       RemoteNotification? notification = message.notification;
       if (notification != null) {

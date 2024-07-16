@@ -3,12 +3,29 @@ import json
 import time
 import firebase_admin
 from firebase_admin import credentials, messaging
+from dotenv import load_dotenv
+import os
 
-API_KEY = 'AIzaSyDQvZJn_guoayk3rjkWleve9FXG71eI4I8'
-CHANNEL_ID = 'UCyqOskZj-THQ5mAl3zEfJAA'
-FCM_CREDENTIALS = r"C:\Users\siddi\OneDrive\Desktop\flutter\firebase\firebase-adminsdk.json.json"
+dotenv_path = os.path.join(os.path.dirname(__file__), '..', 'assets', '.env')
 
-# Initialize the Firebase app
+load_dotenv(dotenv_path)
+
+print(f"Loaded .env file from: {dotenv_path}")
+
+FCM_CREDENTIALS = os.getenv('FCM_CREDENTIALS')
+API_KEY = os.getenv('API_KEY')
+CHANNEL_ID = os.getenv('CHANNEL_ID')
+FCM_REGISTRATION_TOKEN = os.getenv('FCM_REGISTRATION_TOKEN')
+
+if not FCM_CREDENTIALS:
+    raise ValueError('FCM_CREDENTIALS environment variable not set')
+if not API_KEY:
+    raise ValueError('API_KEY environment variable not set')
+if not CHANNEL_ID:
+    raise ValueError('CHANNEL_ID environment variable not set')
+if not FCM_REGISTRATION_TOKEN:
+    raise ValueError('FCM_REGISTRATION_TOKEN environment variable not set')
+
 cred = credentials.Certificate(FCM_CREDENTIALS)
 firebase_admin.initialize_app(cred)
 
@@ -29,17 +46,20 @@ def get_latest_video(api_key, channel_id):
             }
     return None
 
-def send_notification(video_id, title):
+def send_notification(token, title):
     message = messaging.Message(
         notification=messaging.Notification(
             title='New YouTube Video Uploaded!',
             body=title,
         ),
-        topic='youtube_updates',
+        token=token,
     )
 
-    response = messaging.send(message)
-    print('Successfully sent message:', response)
+    try:
+        response = messaging.send(message)
+        print('Successfully sent message:', response)
+    except Exception as e:
+        print('Error sending message:', e)
 
 def main():
     last_video_id = None
@@ -48,9 +68,9 @@ def main():
         if latest_video:
             video_id = latest_video['video_id']
             if video_id != last_video_id:
-                send_notification(video_id, latest_video['title'])
+                send_notification(FCM_REGISTRATION_TOKEN, latest_video['title'])
                 last_video_id = video_id
-        time.sleep(600)  # Check every 10 minutes
+        time.sleep(600) 
 
 if __name__ == "__main__":
     main()

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class VideoSummarizerPage extends StatefulWidget {
   const VideoSummarizerPage({super.key});
@@ -27,28 +28,31 @@ class _VideoSummarizerPageState extends State<VideoSummarizerPage> {
   }
 
   Future<String> query(String userInput) async {
-    const apiUrl = "https://api-inference.huggingface.co/models/Manu1507/Llama-2-7b-finetunee";
+    final apiUrl = dotenv.env['API_URL'];
+    final apiKey = dotenv.env['API_KEY'];
     final headers = {
-      "Authorization": "Bearer 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",
+      "Authorization": "Bearer $apiKey",
       "Content-Type": "application/json",
     };
 
     try {
-      final response = await http.post(Uri.parse(apiUrl),
+      final response = await http.post(Uri.parse(apiUrl!),
           headers: headers, body: json.encode({"inputs": userInput}));
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
         if (responseData is List && responseData.isNotEmpty) {
-          final summaryText = responseData[0]["summary_text"] as String?;
-          if (summaryText != null) {
-            return summaryText;
+          final generatedText = responseData[0]["generated_text"] as String?;
+          if (generatedText != null) {
+            return generatedText;
           } else {
             debugPrint("API Error Response Body: ${response.body}");
-            throw Exception("Invalid response format: 'summary_text' field is missing or null");
+            throw Exception(
+                "Invalid response format: 'generated_text' field is missing or null");
           }
         } else {
           debugPrint("API Error Response Body: ${response.body}");
-          throw Exception("Invalid response format: response body is not a non-empty list");
+          throw Exception(
+              "Invalid response format: response body is not a non-empty list");
         }
       } else {
         debugPrint("API Error Response Body: ${response.body}");
@@ -60,14 +64,6 @@ class _VideoSummarizerPageState extends State<VideoSummarizerPage> {
     }
   }
 
-  /*void _openDocument(BuildContext context) async {
-    final result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['pdf']);
-    if (result != null) {
-      debugPrint('Document picked: ${result.files.single.path}');
-      // ignore: use_build_context_synchronously
-      _showCustomDialog(context, 'Document selected from drive');
-    }
-  }
 
   void _showCustomDialog(BuildContext context, String message) {
     showDialog(
@@ -77,20 +73,20 @@ class _VideoSummarizerPageState extends State<VideoSummarizerPage> {
         return CustomDialog(message: message);
       },
     );
-  }*/
+  }
 
-@override
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
-          // Background Design
+          
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [Color(0xFF4E80A8), Color(0xFF416D98)], // Blue Gradient
+                colors: [Color(0xFF4E80A8), Color(0xFF416D98)], 
               ),
             ),
           ),
@@ -141,32 +137,19 @@ class _VideoSummarizerPageState extends State<VideoSummarizerPage> {
                       ],
                     ),
                     child: Padding(
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 16.0),
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
                       child: TextField(
                         controller: _textController,
                         maxLines: null,
                         expands: true,
                         textAlignVertical: TextAlignVertical.top,
                         decoration: const InputDecoration(
-                          hintText: 'Enter your YouTube URL here  ',
+                          hintText: 'Enter your vifeo url to Summarize ',
                           border: InputBorder.none,
                         ),
                       ),
                     ),
                   ),
-                 /* const SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: () => _openDocument(context),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.insert_drive_file),
-                        SizedBox(width: 8),
-                        Text('Select Document'),
-                      ],
-                    ),
-                  ),*/
                   const SizedBox(height: 20),
                   ElevatedButton(
                     onPressed: _summarizeText,
@@ -201,7 +184,6 @@ class _VideoSummarizerPageState extends State<VideoSummarizerPage> {
     );
   }
 }
-
 
 class CustomDialog extends StatelessWidget {
   final String message;
